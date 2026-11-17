@@ -292,6 +292,19 @@ public class RIL extends BaseCommands implements CommandsInterface {
 
     static final String[] HIDL_SERVICE_NAME = {"slot1", "slot2", "slot3"};
 
+    /**
+     * cannon: 恢复 Android 12 之后被移除的静态工具方法。原厂 A12 的 IMS 栈
+     * (com.mediatek.ims) 静态调用它，缺了会 NoSuchMethodError。仅恢复行为，无副作用。
+     * @hide
+     */
+    public static byte[] arrayListToPrimitiveArray(ArrayList<Byte> bytes) {
+        byte[] ret = new byte[bytes.size()];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = bytes.get(i);
+        }
+        return ret;
+    }
+
     private static final Map<String, Integer> FEATURES_TO_SERVICES = Map.ofEntries(
             Map.entry(PackageManager.FEATURE_TELEPHONY_CALLING, HAL_SERVICE_VOICE),
             Map.entry(PackageManager.FEATURE_TELEPHONY_DATA, HAL_SERVICE_DATA),
@@ -684,7 +697,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
             } else {
                 try {
                     mRadioProxy = android.hardware.radio.V1_6.IRadio.getService(
-                            HIDL_SERVICE_NAME[mPhoneId], true);
+                            HIDL_SERVICE_NAME[mPhoneId], false);
                     mHalVersion.put(HAL_SERVICE_RADIO, RADIO_HAL_VERSION_1_6);
                 } catch (NoSuchElementException e) {
                 }
@@ -692,7 +705,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
                 if (mRadioProxy == null) {
                     try {
                         mRadioProxy = android.hardware.radio.V1_5.IRadio.getService(
-                                HIDL_SERVICE_NAME[mPhoneId], true);
+                                HIDL_SERVICE_NAME[mPhoneId], false);
                         mHalVersion.put(HAL_SERVICE_RADIO, RADIO_HAL_VERSION_1_5);
                     } catch (NoSuchElementException e) {
                     }
@@ -701,7 +714,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
                 if (mRadioProxy == null) {
                     try {
                         mRadioProxy = android.hardware.radio.V1_4.IRadio.getService(
-                                HIDL_SERVICE_NAME[mPhoneId], true);
+                                HIDL_SERVICE_NAME[mPhoneId], false);
                         mHalVersion.put(HAL_SERVICE_RADIO, RADIO_HAL_VERSION_1_4);
                     } catch (NoSuchElementException e) {
                     }
@@ -919,7 +932,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
                         mHalVersion.put(service, RADIO_HAL_VERSION_1_6);
                         serviceProxy.setHidl(mHalVersion.get(service),
                                 android.hardware.radio.V1_6.IRadio.getService(
-                                        HIDL_SERVICE_NAME[mPhoneId], true));
+                                        HIDL_SERVICE_NAME[mPhoneId], false));
                     } catch (NoSuchElementException e) {
                     }
                 }
@@ -930,7 +943,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
                         mHalVersion.put(service, RADIO_HAL_VERSION_1_5);
                         serviceProxy.setHidl(mHalVersion.get(service),
                                 android.hardware.radio.V1_5.IRadio.getService(
-                                        HIDL_SERVICE_NAME[mPhoneId], true));
+                                        HIDL_SERVICE_NAME[mPhoneId], false));
                     } catch (NoSuchElementException e) {
                     }
                 }
@@ -941,7 +954,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
                         mHalVersion.put(service, RADIO_HAL_VERSION_1_4);
                         serviceProxy.setHidl(mHalVersion.get(service),
                                 android.hardware.radio.V1_4.IRadio.getService(
-                                        HIDL_SERVICE_NAME[mPhoneId], true));
+                                        HIDL_SERVICE_NAME[mPhoneId], false));
                     } catch (NoSuchElementException e) {
                     }
                 }
