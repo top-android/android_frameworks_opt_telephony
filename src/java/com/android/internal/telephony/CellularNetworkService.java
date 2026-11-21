@@ -27,6 +27,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PersistableBundle;
+import android.os.SystemProperties;
 import android.telephony.AccessNetworkConstants;
 import android.telephony.AccessNetworkConstants.AccessNetworkType;
 import android.telephony.AnomalyReporter;
@@ -356,7 +357,8 @@ public class CellularNetworkService extends NetworkService {
                 android.hardware.radio.V1_4.NrIndicators nrIndicators = dataRegState.nrIndicators;
                 boolean isEndcAvailable = nrIndicators.isEndcAvailable;
                 boolean isNrAvailable = nrIndicators.isNrAvailable;
-                boolean isDcNrRestricted = nrIndicators.isDcNrRestricted;
+                boolean isDcNrRestricted = applyDcNrRestrictedOverride(
+                        nrIndicators.isDcNrRestricted);
                 String rplmn = getPlmnFromCellIdentity(cellIdentity);
                 List<Integer> availableServices = getAvailableServices(
                         regState, domain, emergencyOnly);
@@ -417,7 +419,8 @@ public class CellularNetworkService extends NetworkService {
                             .AccessTechnologySpecificInfo.EutranRegistrationInfo eutranInfo =
                                     regResult.accessTechnologySpecificInfo.eutranInfo();
 
-                    isDcNrRestricted = eutranInfo.nrIndicators.isDcNrRestricted;
+                    isDcNrRestricted = applyDcNrRestrictedOverride(
+                            eutranInfo.nrIndicators.isDcNrRestricted);
                     isNrAvailable = eutranInfo.nrIndicators.isNrAvailable;
                     isEndcAvailable = eutranInfo.nrIndicators.isEndcAvailable;
                     vopsInfo = convertHalLteVopsSupportInfo(
@@ -496,7 +499,8 @@ public class CellularNetworkService extends NetworkService {
                     defaultRoamingIndicator = info.getCdmaInfo().defaultRoamingIndicator;
                     break;
                 case android.hardware.radio.network.AccessTechnologySpecificInfo.eutranInfo:
-                    isDcNrRestricted = info.getEutranInfo().nrIndicators.isDcNrRestricted;
+                    isDcNrRestricted = applyDcNrRestrictedOverride(
+                            info.getEutranInfo().nrIndicators.isDcNrRestricted);
                     isNrAvailable = info.getEutranInfo().nrIndicators.isNrAvailable;
                     isEndcAvailable = info.getEutranInfo().nrIndicators.isEndcAvailable;
                     vopsInfo = convertHalLteVopsSupportInfo(
@@ -633,7 +637,8 @@ public class CellularNetworkService extends NetworkService {
                     defaultRoamingIndicator = info.cdmaInfo().defaultRoamingIndicator;
                     break;
                 case AccessTechnologySpecificInfo.hidl_discriminator.eutranInfo:
-                    isDcNrRestricted = info.eutranInfo().nrIndicators.isDcNrRestricted;
+                    isDcNrRestricted = applyDcNrRestrictedOverride(
+                            info.eutranInfo().nrIndicators.isDcNrRestricted);
                     isNrAvailable = info.eutranInfo().nrIndicators.isNrAvailable;
                     isEndcAvailable = info.eutranInfo().nrIndicators.isEndcAvailable;
                     vopsInfo = convertHalLteVopsSupportInfo(
@@ -669,6 +674,13 @@ public class CellularNetworkService extends NetworkService {
                             rplmn, MAX_DATA_CALLS, isDcNrRestricted, isNrAvailable, isEndcAvailable,
                             vopsInfo);
             }
+        }
+
+        // cannon: 定位 5G 问题时用来屏蔽 modem 上报的 dcNrRestricted，
+        // 由 debug.cannon.ignore_dcnr_restricted 控制，默认不生效。
+        private boolean applyDcNrRestrictedOverride(boolean isDcNrRestricted) {
+            return SystemProperties.getBoolean("debug.cannon.ignore_dcnr_restricted", false)
+                    ? false : isDcNrRestricted;
         }
 
         private LteVopsSupportInfo convertHalLteVopsSupportInfo(
